@@ -7,13 +7,11 @@ DECLARE
 	i            NUMBER;
 	v_num_cols   NUMBER;
 	v_len        NUMBER;
-	v_existe_tab NUMBER;
-	v_existe_com NUMBER;
 	v_existe_pri NUMBER;
 	v_existe_uni NUMBER;
 	v_existe_for NUMBER;
 BEGIN
-	v_tabla := upper('tb_ad_grados');
+	v_tabla := upper('tb_ad_nombres_listas');
 	i       := 0;
 
 	BEGIN
@@ -52,7 +50,8 @@ BEGIN
 							FROM all_tab_cols tc
 						 WHERE tc.owner = USER
 							 AND tc.table_name = v_tabla
-						 ORDER BY tc.column_id) LOOP
+						 ORDER BY tc.table_name
+										 ,tc.internal_column_id) LOOP
 		IF i = v_num_cols - 1 THEN
 			v_comma := '';
 		ELSE
@@ -92,31 +91,6 @@ BEGIN
 
 	BEGIN
 		SELECT 1
-			INTO v_existe_tab
-			FROM all_tab_comments t
-		 WHERE t.owner = USER
-			 AND t.table_type = 'TABLE'
-			 AND t.comments IS NOT NULL
-			 AND t.table_name = v_tabla;
-	EXCEPTION
-		WHEN OTHERS THEN
-			NULL;
-	END;
-
-	BEGIN
-		SELECT 1
-			INTO v_existe_com
-			FROM all_col_comments c
-		 WHERE c.owner = USER
-			 AND c.comments IS NOT NULL
-			 AND c.table_name = v_tabla;
-	EXCEPTION
-		WHEN OTHERS THEN
-			NULL;
-	END;
-
-	BEGIN
-		SELECT 1
 			INTO v_existe_pri
 			FROM all_constraints c
 		 WHERE c.owner = USER
@@ -150,32 +124,6 @@ BEGIN
 		WHEN OTHERS THEN
 			NULL;
 	END;
-
-	IF v_existe_tab = 1 THEN
-		FOR x IN (SELECT t.table_name
-										,t.comments
-								FROM all_tab_comments t
-							 WHERE t.owner = USER
-								 AND t.table_type = 'TABLE'
-								 AND t.table_name = v_tabla) LOOP
-			v_sql := 'comment on table ' || x.table_name || chr(13) || chr(9) ||
-							 'is ''' || x.comments || ''';';
-			dbms_output.put_line(v_sql);
-		END LOOP;
-	END IF;
-	IF v_existe_com = 1 THEN
-		FOR x IN (SELECT c.table_name
-										,c.column_name
-										,c.comments
-								FROM all_col_comments c
-							 WHERE c.owner = USER
-								 AND c.table_name = v_tabla) LOOP
-			v_sql := 'comment on table ' || x.table_name || '.' ||
-							 lower(x.column_name) || chr(13) || chr(9) || 'is ''' ||
-							 x.comments || ''';';
-			dbms_output.put_line(v_sql);
-		END LOOP;
-	END IF;
 
 	IF v_existe_pri = 1 THEN
 		FOR x IN (SELECT c.constraint_name
@@ -244,3 +192,4 @@ BEGIN
 	END IF;
 
 END;
+/
